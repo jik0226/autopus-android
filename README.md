@@ -38,6 +38,8 @@
 
 각 단계가 독립 데모 영상 1개. 자세한 일정: [DESIGN.md §5](DESIGN.md).
 
+Week 1에서 빌더가 직접 해야 할 일: [docs/WEEK1_BUILDER_GUIDE.md](docs/WEEK1_BUILDER_GUIDE.md)
+
 ## Quickstart
 
 ### Requirements

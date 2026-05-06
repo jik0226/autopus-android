@@ -3,7 +3,7 @@ package com.jik0226.autopus
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,11 +24,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -66,9 +64,9 @@ private fun HomeScreen() {
     ) {
         StatusPill()
         Spacer(modifier = Modifier.height(24.dp))
-        AutopusMascot(modifier = Modifier.size(180.dp))
+        GadiMascot(modifier = Modifier.size(180.dp))
         Spacer(modifier = Modifier.height(28.dp))
-        SpeechBubble(text = "Autopus")
+        SpeechBubble(text = "Gadi")
         Spacer(modifier = Modifier.height(18.dp))
         ChatBar()
     }
@@ -137,50 +135,13 @@ private fun ChatBar() {
 }
 
 @Composable
-private fun AutopusMascot(modifier: Modifier = Modifier) {
-    Canvas(modifier = modifier) {
-        val body = Color(0xFF7C8CF8)
-        val shadow = Color(0xFF4E5ECC)
-        val ink = Color(0xFF1B2141)
-        val blush = Color(0xFFFFA6B7)
-
-        drawOval(
-            color = body,
-            topLeft = Offset(size.width * 0.18f, size.height * 0.08f),
-            size = Size(size.width * 0.64f, size.height * 0.58f),
-        )
-
-        drawOval(
-            color = shadow,
-            topLeft = Offset(size.width * 0.28f, size.height * 0.5f),
-            size = Size(size.width * 0.44f, size.height * 0.2f),
-        )
-
-        val tentacles = listOf(0.18f, 0.32f, 0.46f, 0.6f, 0.74f)
-        tentacles.forEachIndexed { index, x ->
-            val curve = Path().apply {
-                moveTo(size.width * x, size.height * 0.58f)
-                cubicTo(
-                    size.width * (x - 0.06f),
-                    size.height * 0.78f,
-                    size.width * (x + 0.08f),
-                    size.height * 0.8f,
-                    size.width * (x + 0.02f),
-                    size.height * 0.93f,
-                )
-            }
-            drawPath(
-                path = curve,
-                color = if (index % 2 == 0) body else shadow,
-                style = Stroke(width = size.width * 0.075f),
-            )
-        }
-
-        drawCircle(ink, radius = size.width * 0.035f, center = Offset(size.width * 0.41f, size.height * 0.34f))
-        drawCircle(ink, radius = size.width * 0.035f, center = Offset(size.width * 0.59f, size.height * 0.34f))
-        drawCircle(blush, radius = size.width * 0.035f, center = Offset(size.width * 0.31f, size.height * 0.43f))
-        drawCircle(blush, radius = size.width * 0.035f, center = Offset(size.width * 0.69f, size.height * 0.43f))
-    }
+private fun GadiMascot(modifier: Modifier = Modifier) {
+    Image(
+        painter = painterResource(id = R.drawable.gadi_idle),
+        contentDescription = "Gadi idle mascot",
+        modifier = modifier,
+        contentScale = ContentScale.Fit,
+    )
 }
 
 @Preview(showBackground = true)

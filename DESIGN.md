@@ -1,15 +1,24 @@
 # 디자인: 모바일 RPA + AI Agent + 캐릭터 인터페이스 (Android)
 
 생성일: 2026-05-06
-업데이트: 2026-05-06 (v2 — 정체성 reframing 반영)
-상태: DRAFT v2
+업데이트: 2026-05-06 (v3 — 마스코트 캐릭터 Gadi 확정)
+상태: DRAFT v3
 모드: 빌더 (재미 + 포트폴리오)
 협업: Claude + Codex + 빌더(jik0226)
-코드네임: TBD (v0.1 시작 전 결정)
+코드네임: **Gadi** (강아지 모티브, "guard"의 발음 — 위험한 자동화의 감시자)
 
 ---
 
-## v1 → v2 변경 요약
+## 변경 요약
+
+### v2 → v3 (마스코트 캐릭터 Gadi 확정)
+
+- **마스코트 이름 = Gadi** (빌더의 강아지 이름 + "guard" 발음 — 위험한 자동화의 감시자)
+- 컨셉 = 강아지 모티브 (시바/진도 라인, 크림/베이지 단모, 큰 선 귀)
+- 도구/앱/repo 이름 = **Autopus** 그대로 (🐙 빌더 브랜드 유지)
+- v0.1 Week 1 코드네임 결정 항목 완료
+
+### v1 → v2 (정체성 reframing)
 
 Codex의 정체성 reframing 반영:
 
@@ -48,14 +57,15 @@ Codex의 정체성 reframing 반영:
    └─ CloudVLM (화면 이해 + 액션 추론, v0.3)
 ```
 
-### 캐릭터의 역할 (핵심 reframing)
+### 캐릭터 = Gadi (이름 = 정체성 = 역할)
 
-캐릭터는 **예쁜 껍데기가 아니다.** Accessibility 자동화는 잘못 탭하면 바로 사고가 나는 영역이다. 그 위험을 사용자가 편하게 감시하고 승인하게 만드는 UI가 캐릭터다.
+마스코트 이름 **Gadi**는 빌더의 강아지 이름이자 영어 "**guard**"의 발음. **예쁜 껍데기가 아니다.** Accessibility 자동화는 잘못 탭하면 바로 사고가 나는 영역이고, 그 위험을 사용자가 편하게 감시/승인하게 만드는 UI가 Gadi다. **이름과 역할이 우연히 일치 — 정체성 강화.**
 
-- **펫 톤의 친근함** = confirm 다이얼로그의 마찰을 낮춤
+- **펫 톤의 친근함** (강아지 모티브, 크림/베이지) = confirm 다이얼로그의 마찰을 낮춤
 - **표정 변화** (idle / thinking / urgent) = 자동화 상태의 시각적 신호
-- **캐릭터 길게 누르기** = panic stop 액션
+- **Gadi 길게 누르기** = panic stop 액션
 - **자율 실행이 아니라 감독 가능한 실행** = 이 프로젝트의 핵심 차별점
+- **Gadi = guard** = 캐릭터의 본질적 역할 (감시자)
 
 **레퍼런스**: Anthropic Computer Use 모바일판 + Vedal Neuro-sama류 마스코트. Mobile-Agent / AppAgent / Mobile-Agent-v2 학술 흐름.
 
@@ -195,11 +205,11 @@ v0.4+ — TTS, 시나리오 확장, 일정 관리, Live2D 검토
 
 ## 9. 다음 단계 — v0.1 첫 4주 액션
 
-**Week 1 — 프로젝트 셋업 + 캐릭터 자산**
+**Week 1 — 프로젝트 셋업 + 캐릭터 자산 (Gadi)**
 
-1. Android Studio 최신 + 새 Kotlin 프로젝트 (target SDK 35, min 28~30)
-2. 'Hello World' 액티비티 → 캐릭터 sprite 1장 표시 (권한 X, 액티비티 안에서)
-3. 캐릭터 컨셉 3안 AI 생성 → 1안 선택 → 코드네임 결정
+1. Android Studio 최신 + 새 Kotlin 프로젝트 (target SDK 35, min 28~30) ✅ 완료
+2. 'Hello World' 액티비티 → Gadi sprite 1장 표시 (권한 X, 액티비티 안에서)
+3. Gadi 컨셉 3안 AI 생성 (강아지 모티브, 크림/베이지 톤, 시바/진도 라인) → 1안 선택
 4. 6개 상태 sprite + 눈/입 파츠 분리
 
 **Week 2 — Floating Window**
@@ -226,7 +236,6 @@ v0.4+ — TTS, 시나리오 확장, 일정 관리, Live2D 검토
 
 ## 10. 미해결 / 추후 결정
 
-- 코드네임 (캐릭터 이름) — v0.1 시작 전
 - 1차 LLM 공급자 — Anthropic Claude로 시작 권장, 비용/응답 속도 보고 GPT/Gemini 추가 라우팅
 - 캐릭터 컨셉 — AI 생성 도구 (Stable Diffusion / NovelAI / Midjourney) 선택
 - v0.4 TTS 공급자 — 한국어 자연스러움 기준 (ElevenLabs / Azure / OpenAI)
@@ -250,4 +259,4 @@ v0.4+ — TTS, 시나리오 확장, 일정 관리, Live2D 검토
 
 **다음 결정 시점**: v0.1 Week 1이 끝나는 시점. 캐릭터 sprite + 액티비티 안 표시까지 됐을 때, Week 2 진입 전에 한 번 점검.
 
-— Claude (jik0226 + Codex 협업 v2)
+— Claude (jik0226 + Codex 협업 v3)

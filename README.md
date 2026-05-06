@@ -2,7 +2,7 @@
 
 > 모바일 RPA + AI agent + 캐릭터 인터페이스 — Anthropic Computer Use의 Android 모바일 버전
 
-화면 위에 떠다니는 펫 마스코트(**Autopus**, 문어)가 알림을 분류하고, 자연어 명령에 따라 폰 UI를 직접 조작하는 에이전트. "AI that actually does things"라는 경험을 모바일에 구현.
+화면 위에 떠다니는 펫 마스코트 **Gadi** (강아지 모티브, "guard" 발음)가 알림을 분류하고, 자연어 명령에 따라 폰 UI를 직접 조작하는 에이전트. "AI that actually does things"라는 경험을 모바일에 구현. **이름이 곧 역할 — 위험한 자동화의 감시자.**
 
 **상태**: Pre-v0.1 (Week 1 셋업 단계)
 
@@ -69,4 +69,4 @@ MIT. See [LICENSE](LICENSE).
 
 ---
 
-🐙 *"AI that actually does things — but only when you say so."*
+🐙 *"Gadi — AI that actually does things, but only when you say so."*

@@ -1,4 +1,4 @@
-package com.jik0226.autopus
+package app.gadi
 
 import org.junit.Assert.assertEquals
 import org.junit.Test

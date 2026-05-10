@@ -1,4 +1,4 @@
-package com.jik0226.autopus
+package app.gadi
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -36,13 +36,13 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            AutopusApp()
+            GadiApp()
         }
     }
 }
 
 @Composable
-private fun AutopusApp() {
+private fun GadiApp() {
     MaterialTheme {
         Surface(
             modifier = Modifier.fillMaxSize(),
@@ -146,6 +146,6 @@ private fun GadiMascot(modifier: Modifier = Modifier) {
 
 @Preview(showBackground = true)
 @Composable
-private fun AutopusAppPreview() {
-    AutopusApp()
+private fun GadiAppPreview() {
+    GadiApp()
 }

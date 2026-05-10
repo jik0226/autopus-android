@@ -1,4 +1,4 @@
-# Autopus Android
+# Gadi
 
 > 모바일 RPA + AI agent + 캐릭터 인터페이스 — Anthropic Computer Use의 Android 모바일 버전
 
@@ -19,7 +19,7 @@
 
 ## 기술 스택
 
-- **Platform**: Android only (target SDK 35, min 28~30)
+- **Platform**: Android only (target SDK 36, min 28~30)
 - **Language**: Kotlin + Jetpack Compose
 - **권한**: `SYSTEM_ALERT_WINDOW`, `NotificationListenerService`, `AccessibilityService`
 - **LLM**: Anthropic Claude (cloud chat, v0.1) → Cloud Vision LLM (v0.3) + 로컬 SLM (v0.2)
@@ -43,8 +43,8 @@
 ### Requirements
 
 - Android Studio with JDK 17
-- Android SDK Platform 35
-- Android SDK Build Tools 35.0.0+
+- Android SDK Platform 36
+- Android SDK Build Tools 36.0.0+
 
 ### Run
 
@@ -69,4 +69,4 @@ MIT. See [LICENSE](LICENSE).
 
 ---
 
-🐙 *"Gadi — AI that actually does things, but only when you say so."*
+*"Gadi — AI that actually does things, but only when you say so."*

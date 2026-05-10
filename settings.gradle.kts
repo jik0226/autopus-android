@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "AutopusAndroid"
+rootProject.name = "Gadi"
 include(":app")

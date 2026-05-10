@@ -1,10 +1,12 @@
-# Contributing — Autopus Android
+# Contributing — Gadi
 
 이 프로젝트는 **빌더 + Claude + Codex** 셋의 분업으로 진행된다. 두 AI 모두 매 세션 시작 시 이 문서를 읽고 룰을 따른다.
 
 ---
 
 ## Commit 룰 (Lore 형식, 필수)
+
+이 프로젝트는 Lore 형식을 따르되 마지막 Autopus 서명 라인은 생략한다 — 빌더의 글로벌 `CLAUDE.md` 룰의 명시 예외. 협업 정보는 README/WORKFLOW에서 언급되므로 commit 서명은 git author 정보로 충분.
 
 모든 commit 메시지는 다음 형식을 따른다.
 
@@ -21,8 +23,6 @@ Directive: <follow-up guidance>
 Tested: <what was verified>
 Not-tested: <what remains unverified>
 Related: <SPEC-ID, issue, or related change>
-
-🐙 Autopus <noreply@autopus.co>
 ```
 
 ### Type 목록
@@ -40,11 +40,11 @@ Related: <SPEC-ID, issue, or related change>
 ### 금지 사항
 
 - **`Co-Authored-By:` 트레일러 사용 금지.** 두 AI 모두 적용.
-- 서명은 `🐙 Autopus <noreply@autopus.co>` 단일 사용.
+- **마지막 서명 라인 사용 X** (이 프로젝트의 글로벌 룰 명시 예외).
 
 ### Codex가 commit 만들 때
 
-매 세션 시작 시 이 파일을 먼저 읽기 (`CONTRIBUTING.md`). Lore 형식 잊지 말 것. 메시지 작성이 헷갈리면 빌더에게 물어 Claude가 작성하게 핸드오프.
+매 세션 시작 시 이 파일을 먼저 읽기 (`CONTRIBUTING.md`). Lore 형식 (**서명 라인 X**) 잊지 말 것. 메시지 작성이 헷갈리면 빌더에게 물어 Claude가 작성하게 핸드오프.
 
 ---
 
@@ -104,5 +104,3 @@ Related: <SPEC-ID, issue, or related change>
 - **디자인 통합** — Codex가 발견한 구현 디테일은 Claude가 DESIGN.md에 통합.
 
 ---
-
-🐙 Autopus

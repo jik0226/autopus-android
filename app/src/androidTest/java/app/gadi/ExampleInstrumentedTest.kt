@@ -1,4 +1,4 @@
-package com.jik0226.autopus
+package app.gadi
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
@@ -9,6 +9,6 @@ import org.junit.runner.RunWith
 class ExampleInstrumentedTest {
     @Test
     fun packageName_isCorrect() {
-        assertEquals("com.jik0226.autopus", androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext.packageName)
+        assertEquals("app.gadi", androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext.packageName)
     }
 }

@@ -5,13 +5,13 @@ plugins {
 }
 
 android {
-    namespace = "com.jik0226.autopus"
-    compileSdk = 35
+    namespace = "app.gadi"
+    compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.jik0226.autopus"
+        applicationId = "app.gadi"
         minSdk = 28
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "0.1.0"
 

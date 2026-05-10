@@ -1,6 +1,9 @@
 package app.gadi
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
@@ -18,10 +21,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -33,22 +40,82 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 class MainActivity : ComponentActivity() {
+    private var canDrawOverlays by mutableStateOf(false)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        refreshOverlayPermission()
         setContent {
-            GadiApp()
+            GadiApp(
+                canDrawOverlays = canDrawOverlays,
+                onRequestOverlayPermission = ::openOverlayPermissionSettings,
+            )
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        refreshOverlayPermission()
+    }
+
+    private fun refreshOverlayPermission() {
+        canDrawOverlays = Settings.canDrawOverlays(this)
+    }
+
+    private fun openOverlayPermissionSettings() {
+        val intent = Intent(
+            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+            Uri.parse("package:$packageName"),
+        )
+        startActivity(intent)
     }
 }
 
 @Composable
-private fun GadiApp() {
+private fun GadiApp(
+    canDrawOverlays: Boolean,
+    onRequestOverlayPermission: () -> Unit,
+) {
     MaterialTheme {
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = Color(0xFFF8FAFC),
         ) {
-            HomeScreen()
+            if (canDrawOverlays) {
+                HomeScreen()
+            } else {
+                OverlayPermissionScreen(onRequestOverlayPermission = onRequestOverlayPermission)
+            }
+        }
+    }
+}
+
+@Composable
+private fun OverlayPermissionScreen(onRequestOverlayPermission: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 28.dp, vertical = 40.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        GadiMascot(modifier = Modifier.size(180.dp))
+        Spacer(modifier = Modifier.height(28.dp))
+        Text(
+            text = "Gadi가 다른 앱 위에서 안전하게 도와주려면 표시 권한이 필요해요.",
+            color = Color(0xFF172033),
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+        )
+        Spacer(modifier = Modifier.height(10.dp))
+        Text(
+            text = "권한을 끄면 floating companion 기능은 사용할 수 없고, 이 화면에서 다시 안내할게요.",
+            color = Color(0xFF64748B),
+            fontSize = 15.sp,
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+        Button(onClick = onRequestOverlayPermission) {
+            Text(text = "권한 허용")
         }
     }
 }
@@ -147,5 +214,17 @@ private fun GadiMascot(modifier: Modifier = Modifier) {
 @Preview(showBackground = true)
 @Composable
 private fun GadiAppPreview() {
-    GadiApp()
+    GadiApp(
+        canDrawOverlays = true,
+        onRequestOverlayPermission = {},
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun OverlayPermissionScreenPreview() {
+    GadiApp(
+        canDrawOverlays = false,
+        onRequestOverlayPermission = {},
+    )
 }

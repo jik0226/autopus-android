@@ -2,6 +2,7 @@ package app.gadi
 
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
@@ -49,6 +50,7 @@ class MainActivity : ComponentActivity() {
             GadiApp(
                 canDrawOverlays = canDrawOverlays,
                 onRequestOverlayPermission = ::openOverlayPermissionSettings,
+                onStartOverlay = ::startGadiOverlay,
             )
         }
     }
@@ -69,12 +71,22 @@ class MainActivity : ComponentActivity() {
         )
         startActivity(intent)
     }
+
+    private fun startGadiOverlay() {
+        val intent = Intent(this, GadiOverlayService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent)
+        } else {
+            startService(intent)
+        }
+    }
 }
 
 @Composable
 private fun GadiApp(
     canDrawOverlays: Boolean,
     onRequestOverlayPermission: () -> Unit,
+    onStartOverlay: () -> Unit,
 ) {
     MaterialTheme {
         Surface(
@@ -82,7 +94,7 @@ private fun GadiApp(
             color = Color(0xFFF8FAFC),
         ) {
             if (canDrawOverlays) {
-                HomeScreen()
+                HomeScreen(onStartOverlay = onStartOverlay)
             } else {
                 OverlayPermissionScreen(onRequestOverlayPermission = onRequestOverlayPermission)
             }
@@ -121,7 +133,7 @@ private fun OverlayPermissionScreen(onRequestOverlayPermission: () -> Unit) {
 }
 
 @Composable
-private fun HomeScreen() {
+private fun HomeScreen(onStartOverlay: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -136,6 +148,10 @@ private fun HomeScreen() {
         SpeechBubble(text = "Gadi")
         Spacer(modifier = Modifier.height(18.dp))
         ChatBar()
+        Spacer(modifier = Modifier.height(18.dp))
+        Button(onClick = onStartOverlay) {
+            Text(text = "Gadi 띄우기")
+        }
     }
 }
 
@@ -217,6 +233,7 @@ private fun GadiAppPreview() {
     GadiApp(
         canDrawOverlays = true,
         onRequestOverlayPermission = {},
+        onStartOverlay = {},
     )
 }
 
@@ -226,5 +243,6 @@ private fun OverlayPermissionScreenPreview() {
     GadiApp(
         canDrawOverlays = false,
         onRequestOverlayPermission = {},
+        onStartOverlay = {},
     )
 }

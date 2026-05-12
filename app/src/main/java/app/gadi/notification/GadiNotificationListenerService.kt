@@ -3,24 +3,42 @@ package app.gadi.notification
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
+import app.gadi.llm.ModelRouter
+import app.gadi.llm.ModelRouterFactory
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 /**
- * v0.2a — Notification listener skeleton.
+ * v0.2 — System-wide notification listener.
  *
- * Receives system-wide notification events once the user grants access in
+ * Receives notification events once the user grants access in
  * Settings → Notifications → Gadi (BIND_NOTIFICATION_LISTENER_SERVICE is a
- * system permission granted only via that special settings toggle, not via
- * a runtime prompt).
+ * system permission granted only via that special settings toggle).
  *
- * Current behavior: log notifications only. v0.2b will add LLM importance
- * classification; v0.2c will surface results in the mascot speech bubble
- * and add a tap-to-open-original-app action; v0.2d will add per-package
- * allow/block list.
+ * v0.2a: log all posted/removed notifications.
+ * v0.2b: classify each posted notification as 중요/일반 via on-device LLM
+ *        and log the result. UI surfacing follows in v0.2c, per-package
+ *        allow/block list in v0.2d.
  *
- * Privacy invariant: all notification content stays on-device. No external
- * transmission, no persistence beyond logcat at this stage.
+ * Privacy invariant: notification content stays on-device. Classification
+ * runs through the on-device Gemma router; never the cloud fallback.
  */
 class GadiNotificationListenerService : NotificationListenerService() {
+
+    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private var router: ModelRouter? = null
+    private var classifier: NotificationClassifier? = null
+
+    override fun onCreate() {
+        super.onCreate()
+        val r = ModelRouterFactory.createDefault(this)
+        router = r
+        classifier = NotificationClassifier(r)
+        Log.i(TAG, "Service created; classifier ready")
+    }
 
     override fun onListenerConnected() {
         super.onListenerConnected()
@@ -39,11 +57,31 @@ class GadiNotificationListenerService : NotificationListenerService() {
         val title = extras?.getCharSequence("android.title")?.toString().orEmpty()
         val text = extras?.getCharSequence("android.text")?.toString().orEmpty()
         Log.i(TAG, "Posted pkg=$pkg title=\"$title\" text=\"$text\"")
+
+        val c = classifier ?: return
+        scope.launch {
+            val importance = try {
+                c.classify(pkg, title, text)
+            } catch (t: Throwable) {
+                Log.w(TAG, "Classification failed for pkg=$pkg", t)
+                NotificationImportance.UNKNOWN
+            }
+            Log.i(TAG, "Classified pkg=$pkg importance=$importance")
+        }
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification?) {
         sbn ?: return
         Log.i(TAG, "Removed pkg=${sbn.packageName}")
+    }
+
+    override fun onDestroy() {
+        scope.cancel()
+        // Router ownership: don't close here — GadiOverlayService manages the engine lifecycle.
+        // If listener service is destroyed but overlay is still alive, closing would break chat.
+        router = null
+        classifier = null
+        super.onDestroy()
     }
 
     private companion object {

@@ -1,6 +1,9 @@
 package app.gadi.llm
 
+import android.content.Context
 import android.util.Log
+import app.gadi.calendar.CalendarKeywords
+import app.gadi.calendar.CalendarRouter
 
 /**
  * Routes user input through tool detection then LLM phrasing.
@@ -14,6 +17,7 @@ import android.util.Log
  * and will close it.
  */
 class ToolRouter(
+    private val context: Context,
     private val engine: GemmaInferenceEngine,
     private val fallbackRouter: ModelRouter,
     private val classifier: IntentClassifier,
@@ -21,7 +25,15 @@ class ToolRouter(
 
     override val isOnDevice: Boolean = fallbackRouter.isOnDevice
 
+    private val calendarRouter = CalendarRouter(context)
+
     override suspend fun generate(prompt: String, maxTokens: Int): String {
+        // Calendar-shaped prompts route first; their output is already
+        // human-readable so no LLM phrasing pass is needed.
+        if (CalendarKeywords.match(prompt)) {
+            return calendarRouter.handle(prompt)
+        }
+
         val tool = classifier.classify(prompt)
             ?: return fallbackRouter.generate(prompt, maxTokens)
 

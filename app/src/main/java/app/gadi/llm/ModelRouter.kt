@@ -60,6 +60,6 @@ object ModelRouterFactory {
         val localRouter = LocalRouter(engine)
         val tools = defaultPhoneStateTools(app)
         val classifier = IntentClassifier(tools)
-        return ToolRouter(engine, localRouter, classifier)
+        return ToolRouter(app, engine, localRouter, classifier)
     }
 }

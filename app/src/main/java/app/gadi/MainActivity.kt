@@ -1,5 +1,6 @@
 package app.gadi
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -27,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -39,17 +41,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.gadi.ui.OnboardingScreen
 
 class MainActivity : ComponentActivity() {
     private var canDrawOverlays by mutableStateOf(false)
+    private var notificationListenerEnabled by mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        refreshOverlayPermission()
+        refreshPermissions()
         setContent {
             GadiApp(
-                canDrawOverlays = canDrawOverlays,
-                onRequestOverlayPermission = ::openOverlayPermissionSettings,
+                needsOverlay = !canDrawOverlays,
+                needsNotificationListener = !notificationListenerEnabled,
+                onRequestOverlay = ::openOverlayPermissionSettings,
+                onRequestNotificationListener = ::openNotificationListenerSettings,
                 onStartOverlay = ::startGadiOverlay,
             )
         }
@@ -57,11 +63,12 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        refreshOverlayPermission()
+        refreshPermissions()
     }
 
-    private fun refreshOverlayPermission() {
+    private fun refreshPermissions() {
         canDrawOverlays = Settings.canDrawOverlays(this)
+        notificationListenerEnabled = isNotificationListenerEnabled(this)
     }
 
     private fun openOverlayPermissionSettings() {
@@ -70,6 +77,10 @@ class MainActivity : ComponentActivity() {
             Uri.parse("package:$packageName"),
         )
         startActivity(intent)
+    }
+
+    private fun openNotificationListenerSettings() {
+        startActivity(Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"))
     }
 
     private fun startGadiOverlay() {
@@ -82,52 +93,45 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+private fun isNotificationListenerEnabled(context: Context): Boolean {
+    val flat = Settings.Secure.getString(
+        context.contentResolver,
+        "enabled_notification_listeners",
+    ) ?: return false
+    return flat.split(":").any { it.startsWith(context.packageName) }
+}
+
 @Composable
 private fun GadiApp(
-    canDrawOverlays: Boolean,
-    onRequestOverlayPermission: () -> Unit,
+    needsOverlay: Boolean,
+    needsNotificationListener: Boolean,
+    onRequestOverlay: () -> Unit,
+    onRequestNotificationListener: () -> Unit,
     onStartOverlay: () -> Unit,
 ) {
+    val allGranted = !needsOverlay && !needsNotificationListener
+    // Auto-start overlay service once both permissions land.
+    // Service.onStartCommand is idempotent (existing overlay view is not recreated).
+    LaunchedEffect(allGranted) {
+        if (allGranted) {
+            onStartOverlay()
+        }
+    }
     MaterialTheme {
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = Color(0xFFF8FAFC),
         ) {
-            if (canDrawOverlays) {
+            if (allGranted) {
                 HomeScreen(onStartOverlay = onStartOverlay)
             } else {
-                OverlayPermissionScreen(onRequestOverlayPermission = onRequestOverlayPermission)
+                OnboardingScreen(
+                    needsOverlay = needsOverlay,
+                    needsNotificationListener = needsNotificationListener,
+                    onRequestOverlay = onRequestOverlay,
+                    onRequestNotificationListener = onRequestNotificationListener,
+                )
             }
-        }
-    }
-}
-
-@Composable
-private fun OverlayPermissionScreen(onRequestOverlayPermission: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 28.dp, vertical = 40.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        GadiMascot(modifier = Modifier.size(180.dp))
-        Spacer(modifier = Modifier.height(28.dp))
-        Text(
-            text = "Gadi가 다른 앱 위에서 안전하게 도와주려면 표시 권한이 필요해요.",
-            color = Color(0xFF172033),
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-        )
-        Spacer(modifier = Modifier.height(10.dp))
-        Text(
-            text = "권한을 끄면 floating companion 기능은 사용할 수 없고, 이 화면에서 다시 안내할게요.",
-            color = Color(0xFF64748B),
-            fontSize = 15.sp,
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-        Button(onClick = onRequestOverlayPermission) {
-            Text(text = "권한 허용")
         }
     }
 }
@@ -150,7 +154,7 @@ private fun HomeScreen(onStartOverlay: () -> Unit) {
         ChatBar()
         Spacer(modifier = Modifier.height(18.dp))
         Button(onClick = onStartOverlay) {
-            Text(text = "Gadi 띄우기")
+            Text(text = "Gadi 다시 띄우기")
         }
     }
 }
@@ -231,18 +235,10 @@ private fun GadiMascot(modifier: Modifier = Modifier) {
 @Composable
 private fun GadiAppPreview() {
     GadiApp(
-        canDrawOverlays = true,
-        onRequestOverlayPermission = {},
-        onStartOverlay = {},
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun OverlayPermissionScreenPreview() {
-    GadiApp(
-        canDrawOverlays = false,
-        onRequestOverlayPermission = {},
+        needsOverlay = false,
+        needsNotificationListener = false,
+        onRequestOverlay = {},
+        onRequestNotificationListener = {},
         onStartOverlay = {},
     )
 }

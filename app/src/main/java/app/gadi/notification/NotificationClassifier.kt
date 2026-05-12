@@ -27,10 +27,42 @@ class NotificationClassifier(private val router: ModelRouter) {
         title: String,
         text: String,
     ): NotificationImportance {
+        // v0.2 — Rules first. Gemma 1B Korean classification proved unreliable
+        // even with few-shot (returned IMPORTANT on 광고/일반 inputs). Keyword
+        // rules give deterministic answers within the v0.2 scope. v0.3 will
+        // revisit with a larger model or fine-tuning (see DESIGN.md §10).
+        val ruleResult = ruleBasedClassify(title, text)
+        if (ruleResult != NotificationImportance.UNKNOWN) {
+            return ruleResult
+        }
+        // Fall back to LLM only when rules can't decide. Still on-device.
+        return llmClassify(packageName, title, text)
+    }
+
+    /**
+     * Deterministic keyword-based classification.
+     *
+     * Returns UNKNOWN when no keyword matches so the caller can try the LLM.
+     */
+    private fun ruleBasedClassify(title: String, text: String): NotificationImportance {
+        val combined = (title + " " + text).lowercase()
+
+        if (IMPORTANT_KEYWORDS.any { it in combined }) {
+            return NotificationImportance.IMPORTANT
+        }
+        if (NORMAL_KEYWORDS.any { it in combined }) {
+            return NotificationImportance.NORMAL
+        }
+        return NotificationImportance.UNKNOWN
+    }
+
+    private suspend fun llmClassify(
+        packageName: String,
+        title: String,
+        text: String,
+    ): NotificationImportance {
         val prompt = buildPrompt(packageName, title, text)
         val response = router.generate(prompt, maxTokens = 8).trim().lowercase()
-        // First-occurrence wins: previously "contains(중요)" matched even when
-        // the model said "중요한지 일반인지 모르겠어요" → false IMPORTANT.
         val firstChunk = response.take(30)
         val importantAt = sequenceOf("중요", "important")
             .map { firstChunk.indexOf(it) }
@@ -45,6 +77,32 @@ class NotificationClassifier(private val router: ModelRouter) {
             importantAt < normalAt -> NotificationImportance.IMPORTANT
             else -> NotificationImportance.NORMAL
         }
+    }
+
+    private companion object {
+        // Korean + English signals for the rule-based pre-pass.
+        // Keep these conservative: any false IMPORTANT for an ad costs the user
+        // more attention than a false NORMAL for one missed meeting.
+        val IMPORTANT_KEYWORDS = listOf(
+            // family & people
+            "엄마", "아빠", "형", "누나", "언니", "동생", "오빠", "가족",
+            "선생님", "부장", "팀장", "사장", "고객",
+            // work / schedule
+            "미팅", "회의", "회사", "일정", "약속", "알람", "긴급", "급함",
+            "마감", "출발", "도착",
+            // English
+            "urgent", "asap", "meeting", "deadline",
+        )
+        val NORMAL_KEYWORDS = listOf(
+            // ads & marketing
+            "광고", "할인", "이벤트", "특가", "쿠폰", "세일", "프로모션", "혜택",
+            // automated / completion
+            "배송", "주문 완료", "결제 완료", "처리 완료", "구독", "포인트",
+            // system / generic
+            "시스템", "업데이트", "안내", "공지",
+            // English
+            "ad", "promotion", "sale", "discount", "offer", "coupon",
+        )
     }
 
     private fun buildPrompt(packageName: String, title: String, text: String): String {

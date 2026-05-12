@@ -11,6 +11,7 @@ import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.IBinder
 import android.provider.Settings
+import android.util.Log
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -23,19 +24,31 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import app.gadi.llm.ModelRouter
+import app.gadi.llm.ModelRouterFactory
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 class GadiOverlayService : Service() {
     private lateinit var windowManager: WindowManager
     private lateinit var overlayParams: WindowManager.LayoutParams
+    private lateinit var modelRouter: ModelRouter
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var overlayView: View? = null
     private var chatPanel: LinearLayout? = null
     private var chatInput: EditText? = null
+    private var sendButton: Button? = null
     private var bubbleText: TextView? = null
     private var isChatOpen = false
+    private var isGenerating = false
 
     override fun onCreate() {
         super.onCreate()
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+        modelRouter = ModelRouterFactory.createDefault(this)
         startForeground(NOTIFICATION_ID, createNotification())
 
         if (Settings.canDrawOverlays(this)) {
@@ -61,6 +74,10 @@ class GadiOverlayService : Service() {
 
     override fun onDestroy() {
         removeOverlay()
+        serviceScope.cancel()
+        if (::modelRouter.isInitialized) {
+            modelRouter.close()
+        }
         super.onDestroy()
     }
 
@@ -194,14 +211,15 @@ class GadiOverlayService : Service() {
                 chatInput,
                 LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f),
             )
+            val button = Button(context).apply {
+                text = "Send"
+                setOnClickListener {
+                    submitChatMessage()
+                }
+            }
+            sendButton = button
             row.addView(
-                Button(context).apply {
-                    text = "Send"
-                    setOnClickListener {
-                        bubbleText?.text = "LLM 연결은 Week 3에서 시작해요."
-                        chatInput?.text?.clear()
-                    }
-                },
+                button,
                 LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.WRAP_CONTENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -214,6 +232,51 @@ class GadiOverlayService : Service() {
                     LinearLayout.LayoutParams.WRAP_CONTENT,
                 ),
             )
+        }
+    }
+
+    private fun submitChatMessage() {
+        if (isGenerating) return
+
+        val input = chatInput ?: return
+        val prompt = input.text.toString().trim()
+        if (prompt.isEmpty()) return
+
+        input.text?.clear()
+        setGenerating(true)
+
+        serviceScope.launch {
+            val response = runCatching {
+                modelRouter.generate(prompt)
+            }.fold(
+                onSuccess = { it.ifBlank { "음... 다시 말해줄래요?" } },
+                onFailure = { error ->
+                    Log.e(TAG, "Gadi generation failed", error)
+                    friendlyGenerationError(error)
+                },
+            )
+            bubbleText?.text = response
+            setGenerating(false)
+        }
+    }
+
+    private fun setGenerating(generating: Boolean) {
+        isGenerating = generating
+        bubbleText?.text = if (generating) "..." else bubbleText?.text
+        chatInput?.isEnabled = !generating
+        sendButton?.isEnabled = !generating
+    }
+
+    private fun friendlyGenerationError(error: Throwable): String {
+        val message = error.message.orEmpty()
+        return when {
+            message.contains("model file is missing", ignoreCase = true) -> {
+                "아직 제 작은 두뇌 파일이 없어요. gemma-3-1b-it.task를 설치해 주세요."
+            }
+
+            else -> {
+                "방금은 생각하다가 멈췄어요. 모델 파일과 로그캣을 확인해 주세요."
+            }
         }
     }
 
@@ -308,5 +371,6 @@ class GadiOverlayService : Service() {
     private companion object {
         const val NOTIFICATION_CHANNEL_ID = "gadi_overlay"
         const val NOTIFICATION_ID = 1001
+        const val TAG = "GadiOverlayService"
     }
 }

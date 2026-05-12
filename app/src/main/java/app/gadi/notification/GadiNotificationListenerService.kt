@@ -38,7 +38,7 @@ class GadiNotificationListenerService : NotificationListenerService() {
         super.onCreate()
         val r = ModelRouterFactory.createDefault(this)
         router = r
-        classifier = NotificationClassifier(r)
+        classifier = NotificationClassifier(this, r)
         Log.i(TAG, "Service created; classifier ready")
     }
 
@@ -66,6 +66,12 @@ class GadiNotificationListenerService : NotificationListenerService() {
         // Skip empty system-filler notifications (no title and no text → no signal).
         if (title.isBlank() && text.isBlank()) return
 
+        // Per-package IGNORE rule short-circuits everything: no log, no classify, no surface.
+        if (NotificationRulesStore.get(this, pkg) == NotificationRule.IGNORE) {
+            Log.i(TAG, "Ignored pkg=$pkg by user rule")
+            return
+        }
+
         // Capture PendingIntent up-front; sbn may be reclaimed before classification ends.
         val contentIntent = sbn.notification?.contentIntent
 
@@ -75,6 +81,7 @@ class GadiNotificationListenerService : NotificationListenerService() {
             kind = ActivityLogKind.NOTIFICATION_POSTED,
             summary = title.ifBlank { pkg },
             detail = text.ifBlank { null },
+            packageName = pkg,
         )
 
         val c = classifier ?: return
@@ -90,6 +97,7 @@ class GadiNotificationListenerService : NotificationListenerService() {
                 kind = ActivityLogKind.NOTIFICATION_CLASSIFIED,
                 summary = "${title.ifBlank { pkg }} → $importance",
                 detail = "pkg=$pkg",
+                packageName = pkg,
             )
 
             if (importance == NotificationImportance.IMPORTANT) {

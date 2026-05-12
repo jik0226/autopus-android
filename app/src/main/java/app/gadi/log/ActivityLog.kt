@@ -24,6 +24,8 @@ data class ActivityLogEntry(
     val kind: ActivityLogKind,
     val summary: String,
     val detail: String? = null,
+    /** Source package name when the entry is notification-derived; null otherwise. */
+    val packageName: String? = null,
 )
 
 /**
@@ -42,12 +44,18 @@ object ActivityLog {
     private val _entries = MutableStateFlow<List<ActivityLogEntry>>(emptyList())
     val entries: StateFlow<List<ActivityLogEntry>> = _entries.asStateFlow()
 
-    fun add(kind: ActivityLogKind, summary: String, detail: String? = null) {
+    fun add(
+        kind: ActivityLogKind,
+        summary: String,
+        detail: String? = null,
+        packageName: String? = null,
+    ) {
         val entry = ActivityLogEntry(
             timestampMillis = System.currentTimeMillis(),
             kind = kind,
             summary = summary,
             detail = detail,
+            packageName = packageName,
         )
         // Newest first.
         _entries.value = (listOf(entry) + _entries.value).take(MAX_ENTRIES)

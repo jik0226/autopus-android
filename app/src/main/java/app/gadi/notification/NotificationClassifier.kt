@@ -1,5 +1,6 @@
 package app.gadi.notification
 
+import android.content.Context
 import app.gadi.llm.ModelRouter
 
 /**
@@ -20,13 +21,23 @@ enum class NotificationImportance { IMPORTANT, NORMAL, UNKNOWN }
  * Privacy invariant: notification content stays on-device. The router used
  * here is the same on-device Gemma router as chat; never the cloud fallback.
  */
-class NotificationClassifier(private val router: ModelRouter) {
+class NotificationClassifier(
+    private val context: Context,
+    private val router: ModelRouter,
+) {
 
     suspend fun classify(
         packageName: String,
         title: String,
         text: String,
     ): NotificationImportance {
+        // Per-package user override comes first.
+        when (NotificationRulesStore.get(context, packageName)) {
+            NotificationRule.ALWAYS_IMPORTANT -> return NotificationImportance.IMPORTANT
+            NotificationRule.ALWAYS_NORMAL -> return NotificationImportance.NORMAL
+            NotificationRule.IGNORE -> return NotificationImportance.UNKNOWN
+            NotificationRule.DEFAULT -> { /* fall through to classifier */ }
+        }
         // v0.2 — Rules first. Gemma 1B Korean classification proved unreliable
         // even with few-shot (returned IMPORTANT on 광고/일반 inputs). Keyword
         // rules give deterministic answers within the v0.2 scope. v0.3 will

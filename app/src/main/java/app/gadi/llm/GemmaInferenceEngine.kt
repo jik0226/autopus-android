@@ -36,11 +36,11 @@ class GemmaInferenceEngine(
         inference?.let { return it }
 
         val modelFile = modelLocator.requireModelFile()
+        // Inference parameters (topK/temperature) moved to LlmInferenceSession in newer SDK.
+        // For now, use builder defaults; migrate to Session API in v0.4 (see DESIGN.md §10).
         val options = LlmInference.LlmInferenceOptions.builder()
             .setModelPath(modelFile.absolutePath)
             .setMaxTokens(GEMMA_CONTEXT_TOKENS)
-            .setTopK(40)
-            .setTemperature(0.7f)
             .build()
 
         return LlmInference.createFromOptions(appContext, options).also {

@@ -26,6 +26,8 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import app.gadi.llm.ModelRouter
 import app.gadi.llm.ModelRouterFactory
+import app.gadi.log.ActivityLog
+import app.gadi.log.ActivityLogKind
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -244,6 +246,7 @@ class GadiOverlayService : Service() {
 
         input.text?.clear()
         setGenerating(true)
+        ActivityLog.add(ActivityLogKind.CHAT_USER, prompt)
 
         serviceScope.launch {
             val response = runCatching {
@@ -257,6 +260,7 @@ class GadiOverlayService : Service() {
             )
             bubbleText?.text = response
             setGenerating(false)
+            ActivityLog.add(ActivityLogKind.CHAT_GADI, response)
         }
     }
 

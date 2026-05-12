@@ -5,6 +5,8 @@ import android.service.notification.StatusBarNotification
 import android.util.Log
 import app.gadi.llm.ModelRouter
 import app.gadi.llm.ModelRouterFactory
+import app.gadi.log.ActivityLog
+import app.gadi.log.ActivityLogKind
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -58,6 +60,12 @@ class GadiNotificationListenerService : NotificationListenerService() {
         val text = extras?.getCharSequence("android.text")?.toString().orEmpty()
         Log.i(TAG, "Posted pkg=$pkg title=\"$title\" text=\"$text\"")
 
+        ActivityLog.add(
+            kind = ActivityLogKind.NOTIFICATION_POSTED,
+            summary = title.ifBlank { pkg },
+            detail = text.ifBlank { null },
+        )
+
         val c = classifier ?: return
         scope.launch {
             val importance = try {
@@ -67,6 +75,11 @@ class GadiNotificationListenerService : NotificationListenerService() {
                 NotificationImportance.UNKNOWN
             }
             Log.i(TAG, "Classified pkg=$pkg importance=$importance")
+            ActivityLog.add(
+                kind = ActivityLogKind.NOTIFICATION_CLASSIFIED,
+                summary = "${title.ifBlank { pkg }} → $importance",
+                detail = "pkg=$pkg",
+            )
         }
     }
 

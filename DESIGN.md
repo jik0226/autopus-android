@@ -135,6 +135,13 @@ Codex의 정체성 reframing 반영:
 ```
 v0.1 — 캐릭터 + 채팅 + 폰 내부 상태 조회
 v0.2 — 알림 분류 + 알림 → 원본 앱 열기
+v0.2 — 알림 분류 + 알림 → 원본 앱 열기 ✅ 완료
+  v0.2a — NotificationListenerService 권한 + 알림 수집
+  v0.2b — 분류기 (룰 기반 + LLM fallback)
+  v0.2c — Floating bubble 알림 + 원본 앱 열기
+  v0.2d — Per-package 룰 (DEFAULT / ALWAYS_IMPORTANT / ALWAYS_NORMAL / IGNORE) + LogScreen long-press UI
+  v0.2.5 — Onboarding 자동 이동 + 학습 timeline UI (ActivityLog)
+
 v0.3 — "통합 폰 비서 (온디바이스 only)"
   v0.3a — Calendar 등록/조회 (Calendar Provider API)
   v0.3b — SMS + 이메일 prefilled
@@ -306,6 +313,8 @@ v0.5+ — 카톡 자동 답장 등 Accessibility 영역 (사이드로드 전용 
 
 - **1차 온디바이스 모델** — Gemma 3 1B 선택 완료. 한국어 정확도는 v0.1 Week 4에 검증.
 - **MediaPipe LLM Inference → LiteRT-LM 마이그레이션** — Google AI Edge 공식 권장 (MediaPipe Android LLM Inference deprecated). v0.4 또는 v0.3 끝 시점 검토. Gemma 3 1B는 `.task` (MediaPipe) / `.litertlm` (LiteRT-LM) 둘 다 제공되므로 모델 자체는 그대로 사용 가능.
+- **ModelRouter Singleton refactor** — 현재 Overlay/NotificationListener 두 서비스가 각자 `GemmaInferenceEngine` 인스턴스 보유 (총 ~1.4GB on Galaxy Quantum 2 6GB). OOM 위험 시 process-wide Singleton + `GadiOverlayService.onDestroy`의 `close()` 호출 제거 필요. v0.3 진입 시 동시 로딩 모니터링.
+- **Korean LLM 분류 신뢰성** — v0.2b에서 Gemma 1B few-shot도 광고/일반 분류 실패. 현재 룰 기반 1차 + LLM fallback. v0.3 끝 또는 v0.4에서 Polyglot-ko 1.3B / 더 큰 모델 / fine-tuning 검토.
 - **Cloud fallback UX** — v0.3 끝에 검토 (사용자 토글 위치, 안내 문구)
 - ~~캐릭터 컨셉~~ ✅ 완료 (강아지 모티브 sprite 2종)
 - **v0.4 TTS** — 한국어 온디바이스 (Android TTS 시스템 / Sherpa-ONNX 등 검토)
@@ -325,6 +334,10 @@ v0.5+ — 카톡 자동 답장 등 Accessibility 영역 (사이드로드 전용 
 5. **놓치기 쉬운 함정 — 안전 가드레일 미루기.** "v0.3 시작할 때 만들면 되지"라고 미루지 말 것. 코드 짜기 시작하면 무조건 가드레일 먼저. 한 번 잘못 보낸 메시지가 프로젝트 신뢰도를 통째로 날린다.
 
 6. **무덤 패턴 (b → b') 단계화 수용.** v0.3에 5 도메인 묶기 (b) 선택 후, Claude의 "DESIGN.md §11 #1 같은 패턴 재발" 도전을 받아 (b') 단계화 받아들임. 빌더 야심 보존 + 무덤 회피. **미래 v0.4+에서도 같은 흐름 권장** — 큰 비전 던짐 → 한 번 더 도전 → sub-단계화 → 진행.
+
+7. **v0.2 완료 — "검증 → 수정 → 검증" 사이클 빠른 회전.** v0.2b에서 광고 IMPORTANT 오분류, 자체 알림 self-loop, adb quoting text 잘림 등 빌더가 매 commit 후 dogfooding으로 즉시 발견 → Claude/Codex가 fix 한 commit → 빌더 재검증. 평균 사이클 5분 이내. **이 속도가 솔로 빌더 + AI 협업의 가장 큰 강점.** 면접/포트폴리오에서 강조할 가치 — "기능 추가가 아니라 검증 사이클 자체가 자산".
+
+8. **Codex 토큰 소진 → Claude 임시 대행 → Codex 회복 후 리뷰**. 분업 룰의 일시 예외였지만 작동했음. v0.2 거의 전부를 Claude가 코드 작성. Codex 회복 후 누적 review 받을 예정 (이중 안전망 패턴, DESIGN.md §11 #3 두 AI 협업 정신).
 
 ---
 

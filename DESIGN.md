@@ -1,8 +1,8 @@
 # 디자인: 모바일 RPA + AI Agent + 캐릭터 인터페이스 (Android)
 
 생성일: 2026-05-06
-업데이트: 2026-05-06 (v4 — 프로젝트 rebrand: Autopus → Gadi 통합)
-상태: DRAFT v4
+업데이트: 2026-05-06 (v5 — v0.3 reframing: 통합 폰 비서 + 온디바이스 only)
+상태: DRAFT v5
 모드: 빌더 (재미 + 포트폴리오)
 협업: Claude + Codex + 빌더(jik0226)
 코드네임: **Gadi** (강아지 모티브, "guard"의 발음 — 위험한 자동화의 감시자)
@@ -10,6 +10,14 @@
 ---
 
 ## 변경 요약
+
+### v4 → v5 (v0.3 reframing: 통합 폰 비서 + 온디바이스 only)
+
+- **v0.3 전체 재설계**: 카톡 자동화 (Accessibility) → **통합 폰 비서** (Calendar/SMS/파일/Proactive). Play Store 출시 가능 영역으로.
+- 카톡 자동화 등 Accessibility 시나리오 → **v0.5+ 사이드로드 영역**으로 이동.
+- **온디바이스 first 원칙 강화**: 기본 온디바이스 only, 사용자 명시 토글 시 cloud fallback (옵션 B).
+- v0.3 sub-단계 6개 (a~f) 명시: Calendar → SMS/이메일 → 파일 → UsageStats → Proactive → 통합 데모.
+- 빌더의 (b) 야심 선택 → (b') 단계화 수용 패턴 — §11 #6.
 
 ### v3 → v4 (프로젝트 전체 rebrand: Autopus → Gadi 통합)
 
@@ -90,10 +98,11 @@ Codex의 정체성 reframing 반영:
 2. **빌더는 Android 서브폰으로 dogfooding.** 메인은 iPhone.
 3. **느린 템포, 마감 없음.** 학습 + 포트폴리오 가치 우선.
 4. **캐릭터 = 2D 펫 톤.** 음성/TTS는 v0.4 이후.
-5. **하이브리드 LLM 전략 (핵심)**:
-   - v0.2 알림 분류 = **로컬 SLM 가능** (Gemma 3 1B / Llama 3.2 1B / Phi-3 mini / Gemini Nano via AICore)
-   - v0.3 작업 자동화 = **클라우드 비전 LLM 필수** (Claude Sonnet / GPT-4o / Gemini)
-   - 로컬 VLM은 "**실험 트랙**"으로 병렬 연구. 메인 데모는 클라우드.
+5. **온디바이스 first LLM 전략 (v5 강화)**:
+   - **기본 = 온디바이스 only** (Gemma 3 1B / Llama 3.2 1B / Polyglot-ko 1.3B 검토). 모든 데이터 폰 내부 처리.
+   - **사용자 명시 토글 시 cloud fallback** (옵션 B) — `ModelRouter`로 추상화. 복잡 명령 또는 한국어 자연스러움 보완용.
+   - v0.3까지 모든 시나리오 = 표준 Android API 기반이라 온디바이스 1B로 가능.
+   - v0.5+ Accessibility 영역 = 작은 모델 화면 이해 한계 → 사용자 토글로 cloud Vision LLM 또는 미래 모바일 Vision 모델 (Gemma 3n 등) 검토.
 6. **`ModelRouter` 인터페이스를 처음부터 박는다.** 로컬/클라우드 추상화로 모델 교체 비용 최소화.
 7. **포지셔닝 = Play Store 아님 / 사이드로드 + 포트폴리오 데모.** Google Play는 Accessibility로 자율 자동화하는 앱을 정책상 거부한다.
 8. **Android 13+ Restricted Settings, 14+ Foreground Service Type, 15+ overlay 백그라운드 제약, 2026 Developer Verification 롤아웃** 모두 인지 후 사이드로드 경로(ADB / 제한 배포 계정)로 우회.
@@ -121,15 +130,20 @@ Codex의 정체성 reframing 반영:
 
 **좁히기 원칙**: 처음에는 자동 전송 X, **draft 입력 후 사용자 확인** 단계 강제. 그 전에 v0.3a로 **읽기만** 하는 단계 1개 더 둠.
 
-## 5. 추천 접근법 — 빌드 단위 (v2 강화)
+## 5. 추천 접근법 — 빌드 단위 (v5 reframing)
 
 ```
 v0.1 — 캐릭터 + 채팅 + 폰 내부 상태 조회
 v0.2 — 알림 분류 + 알림 → 원본 앱 열기
-v0.3a — 알림 온 앱 열어서 메시지 보여주기 (탭만, 답장 X)
-v0.3b — 자체 샌드박스 메신저 앱 자동 답장 (draft + confirm)
-v0.3c — 카톡 테스트 연락처에 'OK' 답장 (draft + confirm)
-v0.4+ — TTS, 시나리오 확장, 일정 관리, Live2D 검토
+v0.3 — "통합 폰 비서 (온디바이스 only)"
+  v0.3a — Calendar 등록/조회 (Calendar Provider API)
+  v0.3b — SMS + 이메일 prefilled
+  v0.3c — 파일 정리 (반응형: "용량 부족해" 분석 + 제안 + 정리)
+  v0.3d — UsageStatsManager 데이터 수집 (백그라운드 학습 기간)
+  v0.3e — Proactive 룰 + 트리거
+  v0.3f — 통합 데모 영상
+v0.4+ — TTS, Live2D 검토
+v0.5+ — 카톡 자동 답장 등 Accessibility 영역 (사이드로드 전용 데모)
 ```
 
 ### v0.1 — 캐릭터 + 채팅 + 폰 내부 상태 조회
@@ -159,29 +173,62 @@ v0.4+ — TTS, 시나리오 확장, 일정 관리, Live2D 검토
 - **사용자가 누르면 원본 앱 열기** (Notification PendingIntent — 아직 자동화 X)
 - `allowedPackages` / `blockedPackages` 설정 화면
 
-### v0.3a — 알림 온 앱 열어서 메시지 보여주기 (탭만, 답장 X)
+### v0.3a — Calendar 등록/조회 (Calendar Provider API)
 
-**첫 자동화는 "쓰기"가 아니라 "읽기".** 사고 위험 0. 화면 캡처 + 비전 LLM + Action 루프가 동작하는지 검증.
+- 명령 예: "내일 영희랑 7시 약속" / "이번 주 일정?"
+- 자연어 입력 → LLM Tool Use → 일정 정보 추출 (제목, 시간, 참석자)
+- `CalendarContract` API로 등록 / 조회 (사용자 폰에 동기화된 모든 캘린더)
+- 사용자가 자주 쓰는 캘린더 자동 감지 (UsageStatsManager 연계, v0.3d 이후 정교화)
+- **첫 진짜 데모** — 자연어 → 일정 등록 → 사용자 캘린더 앱에서 확인
 
-- 명령 예: "방금 카톡 알림 와있는 거 보여줘"
-- AccessibilityService로 화면 캡처 → Cloud VLM → "카톡 앱 아이콘 위치" 식별 → 탭
-- 카톡 앱 열림 → 최신 채팅방 진입까지만
-- **답장 X. 읽기 전용.**
-- 이 단계에서 안전 가드레일 (Section 6) 전면 적용 필수
+### v0.3b — SMS + 이메일 prefilled
 
-### v0.3b — 샌드박스 메신저 앱 자동 답장
+**SMS:**
+- 명령 예: "엄마한테 늦는다고 문자"
+- LLM Tool Use → `SmsManager.sendTextMessage()`
+- 안전: 보내기 전 confirm 다이얼로그
 
-- 자체 가짜 메신저 앱 (Compose로 빠르게)
-- 동일 파이프라인 + 입력 액션
-- 액션 실행 = **draft 입력 + 사용자 확인 후 전송**
+**이메일 prefilled:**
+- 명령 예: "OO한테 OO 제목으로 메일"
+- `Intent.ACTION_SEND` + `EXTRA_EMAIL/SUBJECT/TEXT`
+- 사용자 메일 앱 prefilled → 사용자가 마지막 "보내기" 한 번 (안전, 실수 방지)
 
-### v0.3c — 카톡 테스트 연락처에 'OK' 답장
+### v0.3c — 파일 정리 (반응형 분석 + 제안)
 
-- 동일 파이프라인 + 카톡 Accessibility node 매핑
-- **첫 진짜 데모 영상** (포트폴리오 표지급)
-- 단일 연락처, 단일 채팅방, 고정 문구 ("OK"), draft + confirm
+- 명령 예: "용량 부족해" / "필요없는 파일 정리해"
+- LLM Tool Use → StorageStatsManager + MediaStore 호출
+- 90일 이상 안 본 파일 추출 (Downloads, 사진 등)
+- 자연어 응답: "다운로드에 X개 YMB. 정리할까요?"
+- 사용자 "정리해" → MediaStore API로 **휴지통 이동** (즉시 삭제 X, 안전)
 
-## 6. 안전 가드레일 (v0.3a 진입 전 필수)
+### v0.3d — UsageStatsManager 데이터 수집 시작 (백그라운드 학습)
+
+- `PACKAGE_USAGE_STATS` 권한 onboarding
+- 앱 사용 패턴 + 시간대 + 알림 반응 빈도 수집
+- Storage 통계, 파일 접근 빈도 수집
+- **학습 기간 = 1~2주** (사용자에게 명시: "Gadi가 학습 중이에요")
+- 데이터는 폰 내부 SQLite. 외부 전송 X.
+
+### v0.3e — Proactive 룰 + 트리거 (수집 데이터 기반)
+
+- 룰 예시:
+  - "Downloads에 90일 안 본 파일 100MB+ 감지 시 알림"
+  - "주말 빈 시간 + 자주 보는 사람 메시지 패턴 → 캘린더 제안"
+  - "주 1회 자주 쓰는 앱 발견 → 즐겨찾기 제안"
+- LLM은 자연어 응답만 생성. 분석/감지는 룰 기반.
+- 사용자 동의 후 액션 실행 (자율 실행 X)
+
+### v0.3f — 통합 데모 영상
+
+- 5 시나리오 (Calendar, SMS, 이메일, 파일, Proactive) 한 영상에
+- 30~60초 — **포트폴리오 표지급**
+- 빌더 일상 시나리오로 시연 (실제 dogfooding 기반)
+
+## 6. 안전 가드레일 (v0.5+ Accessibility 진입 전 필수)
+
+> v0.3 (API 기반)에는 다른 가드레일 적용: 모든 외부 액션 (SMS 발송, 파일 삭제 등) **사용자 confirm 강제**, 휴지통 이동 (즉시 삭제 X), 권한 onboarding 명시 동의.
+
+아래는 **v0.5+ Accessibility 영역** 진입 전 필수:
 
 코드 짜기 시작하면 무조건 가드레일 먼저. 한 번이라도 잘못 보낸 메시지가 있으면 프로젝트 신뢰도가 날아간다.
 
@@ -206,9 +253,12 @@ v0.4+ — TTS, 시나리오 확장, 일정 관리, Live2D 검토
 |---|---|
 | v0.1 | 캐릭터가 화면 위 떠 있고, 클릭하면 채팅. **"지금 몇 시야?", "배터리 얼마야?" 같은 폰 상태 질문에 정확히 답변.** 빌더 본인이 "매일 옆에 있으면 좋겠다" 정도의 감정. |
 | v0.2 | 카톡 알림 10건 받았을 때 "엄마/중요/나머지"로 정확하게 분류. 누르면 원본 앱으로 이동. |
-| v0.3a | "방금 알림 보여줘" 명령 → AI가 카톡 앱 열고 최신 채팅방까지 자동 진입. 사고 0건. |
-| v0.3b | 샌드박스 앱에서 "OK 답장해" → AI가 입력란에 'OK' draft + 사용자 confirm 후 전송 성공. |
-| v0.3c | "엄마한테 OK 답장해" 명령 → 1분 안에 카톡으로 'OK' 전송 성공. **30초 데모 영상 1개 확보.** |
+| v0.3a | "내일 영희랑 약속" → Calendar 등록 + 사용자 캘린더 앱에서 확인. "내일 일정?" → 자연어 답변. |
+| v0.3b | "엄마한테 늦는다 문자" → SmsManager 발송. "OO한테 메일" → 메일 앱 prefilled. |
+| v0.3c | "용량 부족해" → 분석 + 제안 + 휴지통 이동 흐름 동작. |
+| v0.3d | UsageStatsManager 권한 + 데이터 수집 1주 안정 동작. |
+| v0.3e | 1개 이상 Proactive 룰 ("Downloads 90일 안 본 파일") 정확 동작. |
+| v0.3f | 5 시나리오 통합 30~60초 데모 영상. **포트폴리오 표지급.** |
 | 종합 | 포트폴리오에 올렸을 때 "이거 어떻게 만들었어요?" 질문이 한 번이라도 들어오면 성공. |
 
 ## 9. 다음 단계 — v0.1 첫 4주 액션
@@ -244,10 +294,10 @@ v0.4+ — TTS, 시나리오 확장, 일정 관리, Live2D 검토
 
 ## 10. 미해결 / 추후 결정
 
-- 1차 LLM 공급자 — Anthropic Claude로 시작 권장, 비용/응답 속도 보고 GPT/Gemini 추가 라우팅
-- 캐릭터 컨셉 — AI 생성 도구 (Stable Diffusion / NovelAI / Midjourney) 선택
-- v0.4 TTS 공급자 — 한국어 자연스러움 기준 (ElevenLabs / Azure / OpenAI)
-- v0.3a 첫 타깃 앱 — 카톡으로 갈지, 더 단순한 앱(메모/캘린더)부터 갈지
+- **1차 온디바이스 모델** — Gemma 3 1B / Llama 3.2 1B / Polyglot-ko 1.3B 비교. v0.1 Week 4 자연스럽게 검증.
+- **Cloud fallback UX** — v0.3 끝에 검토 (사용자 토글 위치, 안내 문구)
+- ~~캐릭터 컨셉~~ ✅ 완료 (강아지 모티브 sprite 2종)
+- **v0.4 TTS** — 한국어 온디바이스 (Android TTS 시스템 / Sherpa-ONNX 등 검토)
 
 ## 11. 관찰적 멘토링 피드백 (Claude의 시선)
 
@@ -263,8 +313,10 @@ v0.4+ — TTS, 시나리오 확장, 일정 관리, Live2D 검토
 
 5. **놓치기 쉬운 함정 — 안전 가드레일 미루기.** "v0.3 시작할 때 만들면 되지"라고 미루지 말 것. 코드 짜기 시작하면 무조건 가드레일 먼저. 한 번 잘못 보낸 메시지가 프로젝트 신뢰도를 통째로 날린다.
 
+6. **무덤 패턴 (b → b') 단계화 수용.** v0.3에 5 도메인 묶기 (b) 선택 후, Claude의 "DESIGN.md §11 #1 같은 패턴 재발" 도전을 받아 (b') 단계화 받아들임. 빌더 야심 보존 + 무덤 회피. **미래 v0.4+에서도 같은 흐름 권장** — 큰 비전 던짐 → 한 번 더 도전 → sub-단계화 → 진행.
+
 ---
 
 **다음 결정 시점**: v0.1 Week 1이 끝나는 시점. 캐릭터 sprite + 액티비티 안 표시까지 됐을 때, Week 2 진입 전에 한 번 점검.
 
-— Claude (jik0226 + Codex 협업 v4)
+— Claude (jik0226 + Codex 협업 v5)

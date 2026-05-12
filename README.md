@@ -10,10 +10,11 @@
 
 ## 핵심 컨셉
 
-- **Notification Listener** — 알림을 LLM이 분류, 중요한 것만 캐릭터가 알려줌
-- **Accessibility Service** — "이거 해놔" 명령 → AI가 화면 보고 탭/입력/스크롤
-- **Mascot Overlay** — 캐릭터 = 위험한 자동화의 감시/승인 UI (단순 데코 아님)
-- **Hybrid LLM** — 알림 분류는 로컬 SLM, 화면 이해는 Cloud Vision LLM
+- **Notification Listener** — 알림을 LLM이 분류, 중요한 것만 Gadi가 알려줌 (v0.2)
+- **Standard Android APIs** — Calendar / SMS / 파일 / UsageStats 기반 비서 (v0.3, 온디바이스 only)
+- **Mascot Overlay** — Gadi = 위험한 자동화의 감시/승인 UI (단순 데코 아님)
+- **On-device first LLM** — 기본 온디바이스 (Gemma/Llama 1B), 사용자 토글 시 cloud fallback
+- **Accessibility Service** — 카톡/외부 앱 자동화 (v0.5+, 사이드로드 전용)
 
 자세한 설계: [DESIGN.md](DESIGN.md)
 
@@ -31,10 +32,14 @@
 |---|---|
 | v0.1 | 캐릭터 + 채팅 + 폰 내부 상태 조회 (Tool Use) |
 | v0.2 | 알림 분류 + 알림 → 원본 앱 열기 |
-| v0.3a | 알림 온 앱 열어서 메시지 보여주기 (읽기 전용) |
-| v0.3b | 샌드박스 메신저 앱 자동 답장 (draft + confirm) |
-| v0.3c | 카톡 테스트 연락처에 'OK' 답장 (데모 영상 1개) |
-| v0.4+ | TTS, 시나리오 확장, 일정 관리, Live2D 검토 |
+| v0.3a | Calendar 등록/조회 (Calendar Provider API) |
+| v0.3b | SMS + 이메일 prefilled |
+| v0.3c | 파일 정리 (반응형: 용량 부족 분석 + 제안 + 정리) |
+| v0.3d | UsageStatsManager 데이터 수집 (백그라운드 학습) |
+| v0.3e | Proactive 룰 + 트리거 |
+| v0.3f | 통합 데모 영상 (30~60초, 포트폴리오 표지) |
+| v0.4+ | TTS, Live2D 검토 |
+| v0.5+ | 카톡 자동 답장 (Accessibility, 사이드로드 전용 데모) |
 
 각 단계가 독립 데모 영상 1개. 자세한 일정: [DESIGN.md §5](DESIGN.md).
 

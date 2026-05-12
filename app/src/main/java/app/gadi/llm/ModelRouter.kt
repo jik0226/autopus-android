@@ -1,6 +1,7 @@
 package app.gadi.llm
 
 import android.content.Context
+import app.gadi.tools.defaultPhoneStateTools
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -54,6 +55,11 @@ class CloudRouter : ModelRouter {
 
 object ModelRouterFactory {
     fun createDefault(context: Context): ModelRouter {
-        return LocalRouter(GemmaInferenceEngine(context.applicationContext))
+        val app = context.applicationContext
+        val engine = GemmaInferenceEngine(app)
+        val localRouter = LocalRouter(engine)
+        val tools = defaultPhoneStateTools(app)
+        val classifier = IntentClassifier(tools)
+        return ToolRouter(engine, localRouter, classifier)
     }
 }

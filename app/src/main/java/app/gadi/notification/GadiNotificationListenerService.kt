@@ -55,9 +55,17 @@ class GadiNotificationListenerService : NotificationListenerService() {
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
         sbn ?: return
         val pkg = sbn.packageName ?: "unknown"
+
+        // Skip Gadi's own notifications (foreground service FGS notif, debug toasts).
+        if (pkg == packageName) return
+
         val extras = sbn.notification?.extras
         val title = extras?.getCharSequence("android.title")?.toString().orEmpty()
         val text = extras?.getCharSequence("android.text")?.toString().orEmpty()
+
+        // Skip empty system-filler notifications (no title and no text → no signal).
+        if (title.isBlank() && text.isBlank()) return
+
         Log.i(TAG, "Posted pkg=$pkg title=\"$title\" text=\"$text\"")
 
         ActivityLog.add(

@@ -28,28 +28,48 @@ class NotificationClassifier(private val router: ModelRouter) {
         text: String,
     ): NotificationImportance {
         val prompt = buildPrompt(packageName, title, text)
-        val response = router.generate(prompt, maxTokens = 16).trim().lowercase()
+        val response = router.generate(prompt, maxTokens = 8).trim().lowercase()
+        // First-occurrence wins: previously "contains(중요)" matched even when
+        // the model said "중요한지 일반인지 모르겠어요" → false IMPORTANT.
+        val firstChunk = response.take(30)
+        val importantAt = sequenceOf("중요", "important")
+            .map { firstChunk.indexOf(it) }
+            .filter { it >= 0 }
+            .minOrNull() ?: Int.MAX_VALUE
+        val normalAt = sequenceOf("일반", "normal")
+            .map { firstChunk.indexOf(it) }
+            .filter { it >= 0 }
+            .minOrNull() ?: Int.MAX_VALUE
         return when {
-            response.contains("중요") || response.contains("important") -> NotificationImportance.IMPORTANT
-            response.contains("일반") || response.contains("normal") -> NotificationImportance.NORMAL
-            else -> NotificationImportance.UNKNOWN
+            importantAt == Int.MAX_VALUE && normalAt == Int.MAX_VALUE -> NotificationImportance.UNKNOWN
+            importantAt < normalAt -> NotificationImportance.IMPORTANT
+            else -> NotificationImportance.NORMAL
         }
     }
 
     private fun buildPrompt(packageName: String, title: String, text: String): String {
+        // Few-shot: small models like Gemma 1B need concrete examples to stay
+        // on format. Each example ends with a one-word answer; the live row
+        // ends with "답:" so the model's first token is the verdict.
         return """
             <start_of_turn>user
-            아래 안드로이드 알림이 사용자에게 즉시 알릴 만큼 중요한지 한 단어로 판단해.
+            아래 안드로이드 알림을 "중요" 또는 "일반" 한 단어로만 분류해.
 
-            앱 패키지: $packageName
-            제목: $title
-            내용: $text
+            예시:
+            앱: com.kakao.talk, 제목: 엄마, 내용: 언제 와?
+            답: 중요
 
-            기준:
-            - 가족/지인 메시지, 업무 연락, 일정/알람 = 중요
-            - 광고, 자동 알림, 게임 보상, 시스템 공지 = 일반
+            앱: com.coupang.mobile, 제목: 광고, 내용: 오늘만 30% 할인!
+            답: 일반
 
-            "중요" 또는 "일반" 한 단어로만 답해.
+            앱: com.samsung.android.calendar, 제목: 미팅, 내용: 1시간 후 시작
+            답: 중요
+
+            앱: com.facebook.katana, 제목: 누군가 좋아요를 눌렀습니다, 내용: 알림
+            답: 일반
+
+            앱: $packageName, 제목: $title, 내용: $text
+            답:
             <end_of_turn>
             <start_of_turn>model
         """.trimIndent()

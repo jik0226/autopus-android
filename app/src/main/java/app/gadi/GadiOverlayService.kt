@@ -3,6 +3,7 @@ package app.gadi
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
 import android.graphics.Color
@@ -28,6 +29,8 @@ import app.gadi.llm.ModelRouter
 import app.gadi.llm.ModelRouterFactory
 import app.gadi.log.ActivityLog
 import app.gadi.log.ActivityLogKind
+import app.gadi.notification.ImportantNotification
+import app.gadi.notification.NotificationEvents
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -43,9 +46,11 @@ class GadiOverlayService : Service() {
     private var chatPanel: LinearLayout? = null
     private var chatInput: EditText? = null
     private var sendButton: Button? = null
+    private var openAppButton: Button? = null
     private var bubbleText: TextView? = null
     private var isChatOpen = false
     private var isGenerating = false
+    private var pendingNotificationIntent: PendingIntent? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -57,6 +62,13 @@ class GadiOverlayService : Service() {
             showOverlay()
         } else {
             stopSelf()
+        }
+
+        // Surface IMPORTANT notifications in the floating bubble.
+        serviceScope.launch {
+            NotificationEvents.important.collect { event ->
+                handleImportantNotification(event)
+            }
         }
     }
 
@@ -199,6 +211,20 @@ class GadiOverlayService : Service() {
                 ),
             )
 
+            val openButton = Button(context).apply {
+                text = "원본 앱 열기"
+                visibility = View.GONE
+                setOnClickListener { openOriginalApp() }
+            }
+            openAppButton = openButton
+            addView(
+                openButton,
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                ).apply { topMargin = dpToPx(8) },
+            )
+
             val row = LinearLayout(context).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL
@@ -269,6 +295,31 @@ class GadiOverlayService : Service() {
         bubbleText?.text = if (generating) "..." else bubbleText?.text
         chatInput?.isEnabled = !generating
         sendButton?.isEnabled = !generating
+    }
+
+    private fun handleImportantNotification(event: ImportantNotification) {
+        pendingNotificationIntent = event.contentIntent
+        val titlePart = event.title.ifBlank { event.packageName }
+        val textPart = event.text.take(120)
+        bubbleText?.text = if (textPart.isBlank()) {
+            "📌 $titlePart"
+        } else {
+            "📌 $titlePart: $textPart"
+        }
+        openAppButton?.visibility = if (event.contentIntent != null) View.VISIBLE else View.GONE
+        setChatOpen(true)
+    }
+
+    private fun openOriginalApp() {
+        val intent = pendingNotificationIntent ?: return
+        try {
+            intent.send()
+            pendingNotificationIntent = null
+            openAppButton?.visibility = View.GONE
+            setChatOpen(false)
+        } catch (e: PendingIntent.CanceledException) {
+            Log.w(TAG, "Original PendingIntent canceled", e)
+        }
     }
 
     private fun friendlyGenerationError(error: Throwable): String {

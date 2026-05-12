@@ -66,6 +66,9 @@ class GadiNotificationListenerService : NotificationListenerService() {
         // Skip empty system-filler notifications (no title and no text → no signal).
         if (title.isBlank() && text.isBlank()) return
 
+        // Capture PendingIntent up-front; sbn may be reclaimed before classification ends.
+        val contentIntent = sbn.notification?.contentIntent
+
         Log.i(TAG, "Posted pkg=$pkg title=\"$title\" text=\"$text\"")
 
         ActivityLog.add(
@@ -88,6 +91,18 @@ class GadiNotificationListenerService : NotificationListenerService() {
                 summary = "${title.ifBlank { pkg }} → $importance",
                 detail = "pkg=$pkg",
             )
+
+            if (importance == NotificationImportance.IMPORTANT) {
+                NotificationEvents.emit(
+                    ImportantNotification(
+                        packageName = pkg,
+                        title = title,
+                        text = text,
+                        timestampMillis = System.currentTimeMillis(),
+                        contentIntent = contentIntent,
+                    )
+                )
+            }
         }
     }
 

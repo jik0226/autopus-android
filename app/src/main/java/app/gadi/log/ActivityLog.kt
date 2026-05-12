@@ -17,6 +17,8 @@ enum class ActivityLogKind {
     NOTIFICATION_POSTED,
     NOTIFICATION_CLASSIFIED,
     TOOL_USED,
+    CALENDAR_ADD,
+    CALENDAR_LIST,
 }
 
 data class ActivityLogEntry(

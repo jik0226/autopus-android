@@ -2,6 +2,8 @@ package app.gadi.calendar
 
 import android.content.Context
 import android.util.Log
+import app.gadi.log.ActivityLog
+import app.gadi.log.ActivityLogKind
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -67,6 +69,10 @@ class CalendarRouter(context: Context) {
         }
 
         val timeText = timeFormat.format(Date(intent.startMillis))
+        ActivityLog.add(
+            kind = ActivityLogKind.CALENDAR_ADD,
+            summary = "${intent.title} — $timeText",
+        )
         return "${intent.title} 일정 등록했어요 — $timeText."
     }
 
@@ -76,6 +82,10 @@ class CalendarRouter(context: Context) {
         }
         val range = parseListRange(prompt)
         val events = repo.listEventsBetween(range.startMillis, range.endMillis)
+        ActivityLog.add(
+            kind = ActivityLogKind.CALENDAR_LIST,
+            summary = "${range.label} 일정 ${events.size}개 조회",
+        )
         if (events.isEmpty()) {
             return "${range.label} 일정이 없어요."
         }

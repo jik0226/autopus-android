@@ -322,6 +322,8 @@ private fun ActivityLogEntry.kindGlyph(): String = when (kind) {
     ActivityLogKind.NOTIFICATION_POSTED -> "🔔"
     ActivityLogKind.NOTIFICATION_CLASSIFIED -> "🏷"
     ActivityLogKind.TOOL_USED -> "🛠"
+    ActivityLogKind.CALENDAR_ADD -> "📅"
+    ActivityLogKind.CALENDAR_LIST -> "📖"
 }
 
 private fun ActivityLogEntry.kindLabel(): String = when (kind) {
@@ -330,6 +332,8 @@ private fun ActivityLogEntry.kindLabel(): String = when (kind) {
     ActivityLogKind.NOTIFICATION_POSTED -> "알림"
     ActivityLogKind.NOTIFICATION_CLASSIFIED -> "분류"
     ActivityLogKind.TOOL_USED -> "도구"
+    ActivityLogKind.CALENDAR_ADD -> "일정 추가"
+    ActivityLogKind.CALENDAR_LIST -> "일정 조회"
 }
 
 private fun ActivityLogEntry.kindColor(): Color = when (kind) {
@@ -338,6 +342,8 @@ private fun ActivityLogEntry.kindColor(): Color = when (kind) {
     ActivityLogKind.NOTIFICATION_POSTED -> Color(0xFF6366F1)
     ActivityLogKind.NOTIFICATION_CLASSIFIED -> Color(0xFF1F6F4A)
     ActivityLogKind.TOOL_USED -> Color(0xFF8B5CF6)
+    ActivityLogKind.CALENDAR_ADD -> Color(0xFF0EA5E9)
+    ActivityLogKind.CALENDAR_LIST -> Color(0xFF7C3AED)
 }
 
 private val TIME_FORMAT = SimpleDateFormat("HH:mm:ss", Locale.KOREA)

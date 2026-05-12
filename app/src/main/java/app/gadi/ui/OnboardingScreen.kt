@@ -40,8 +40,10 @@ import app.gadi.R
 fun OnboardingScreen(
     needsOverlay: Boolean,
     needsNotificationListener: Boolean,
+    needsCalendar: Boolean,
     onRequestOverlay: () -> Unit,
     onRequestNotificationListener: () -> Unit,
+    onRequestCalendar: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -63,7 +65,7 @@ fun OnboardingScreen(
             color = Color(0xFF64748B),
         )
         Text(
-            text = "두 가지 권한이 필요해요",
+            text = "세 가지 권한이 필요해요",
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
             color = Color(0xFF172033),
@@ -82,6 +84,13 @@ fun OnboardingScreen(
             description = "알림을 분류해서 중요한 것만 알려줄 수 있게요.",
             done = !needsNotificationListener,
             onClick = onRequestNotificationListener,
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        PermissionStep(
+            title = "캘린더 접근",
+            description = "일정을 추가하고 조회할 수 있게요.",
+            done = !needsCalendar,
+            onClick = onRequestCalendar,
         )
     }
 }

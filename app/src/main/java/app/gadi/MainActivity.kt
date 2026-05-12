@@ -1,13 +1,16 @@
 package app.gadi
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -19,12 +22,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.content.ContextCompat
 import app.gadi.ui.LogScreen
 import app.gadi.ui.OnboardingScreen
 
 class MainActivity : ComponentActivity() {
     private var canDrawOverlays by mutableStateOf(false)
     private var notificationListenerEnabled by mutableStateOf(false)
+    private var canAccessCalendar by mutableStateOf(false)
+
+    private val calendarPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { _ -> refreshPermissions() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,8 +42,10 @@ class MainActivity : ComponentActivity() {
             GadiApp(
                 needsOverlay = !canDrawOverlays,
                 needsNotificationListener = !notificationListenerEnabled,
+                needsCalendar = !canAccessCalendar,
                 onRequestOverlay = ::openOverlayPermissionSettings,
                 onRequestNotificationListener = ::openNotificationListenerSettings,
+                onRequestCalendar = ::requestCalendarPermissions,
                 onStartOverlay = ::startGadiOverlay,
             )
         }
@@ -48,6 +59,7 @@ class MainActivity : ComponentActivity() {
     private fun refreshPermissions() {
         canDrawOverlays = Settings.canDrawOverlays(this)
         notificationListenerEnabled = isNotificationListenerEnabled(this)
+        canAccessCalendar = hasCalendarPermissions(this)
     }
 
     private fun openOverlayPermissionSettings() {
@@ -62,6 +74,15 @@ class MainActivity : ComponentActivity() {
         startActivity(Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"))
     }
 
+    private fun requestCalendarPermissions() {
+        calendarPermissionLauncher.launch(
+            arrayOf(
+                Manifest.permission.READ_CALENDAR,
+                Manifest.permission.WRITE_CALENDAR,
+            )
+        )
+    }
+
     private fun startGadiOverlay() {
         val intent = Intent(this, GadiOverlayService::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -70,6 +91,16 @@ class MainActivity : ComponentActivity() {
             startService(intent)
         }
     }
+}
+
+private fun hasCalendarPermissions(context: Context): Boolean {
+    val read = ContextCompat.checkSelfPermission(
+        context, Manifest.permission.READ_CALENDAR,
+    ) == PackageManager.PERMISSION_GRANTED
+    val write = ContextCompat.checkSelfPermission(
+        context, Manifest.permission.WRITE_CALENDAR,
+    ) == PackageManager.PERMISSION_GRANTED
+    return read && write
 }
 
 private fun isNotificationListenerEnabled(context: Context): Boolean {
@@ -84,12 +115,14 @@ private fun isNotificationListenerEnabled(context: Context): Boolean {
 private fun GadiApp(
     needsOverlay: Boolean,
     needsNotificationListener: Boolean,
+    needsCalendar: Boolean,
     onRequestOverlay: () -> Unit,
     onRequestNotificationListener: () -> Unit,
+    onRequestCalendar: () -> Unit,
     onStartOverlay: () -> Unit,
 ) {
-    val allGranted = !needsOverlay && !needsNotificationListener
-    // Auto-start overlay service once both permissions land.
+    val allGranted = !needsOverlay && !needsNotificationListener && !needsCalendar
+    // Auto-start overlay service once all permissions land.
     // Service.onStartCommand is idempotent (existing overlay view is not recreated).
     LaunchedEffect(allGranted) {
         if (allGranted) {
@@ -107,8 +140,10 @@ private fun GadiApp(
                 OnboardingScreen(
                     needsOverlay = needsOverlay,
                     needsNotificationListener = needsNotificationListener,
+                    needsCalendar = needsCalendar,
                     onRequestOverlay = onRequestOverlay,
                     onRequestNotificationListener = onRequestNotificationListener,
+                    onRequestCalendar = onRequestCalendar,
                 )
             }
         }
@@ -121,8 +156,10 @@ private fun GadiAppPreview() {
     GadiApp(
         needsOverlay = false,
         needsNotificationListener = false,
+        needsCalendar = false,
         onRequestOverlay = {},
         onRequestNotificationListener = {},
+        onRequestCalendar = {},
         onStartOverlay = {},
     )
 }

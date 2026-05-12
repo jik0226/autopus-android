@@ -33,10 +33,11 @@ class IntentClassifier(private val tools: List<Tool>) {
         keywords.any { it in input }
 
     private companion object {
-        val TIME_KEYWORDS = listOf("시간", "몇 시", "몇시", "시각", "지금", "time", "what time")
-        val BATTERY_KEYWORDS = listOf("배터리", "잔량", "충전", "전원", "battery")
-        val NETWORK_KEYWORDS = listOf("와이파이", "wifi", "네트워크", "인터넷", "데이터", "연결")
-        val DEVICE_KEYWORDS = listOf("기종", "모델", "디바이스", "기기", "안드로이드", "버전", "device")
+        // "지금" was too greedy ("지금 배터리 얼마야?" → time match). Removed.
+        val TIME_KEYWORDS = listOf("시간", "몇 시", "몇시", "시각", "time", "what time", "clock")
+        val BATTERY_KEYWORDS = listOf("배터리", "잔량", "충전", "전원", "battery", "퍼센트")
+        val NETWORK_KEYWORDS = listOf("와이파이", "wifi", "네트워크", "인터넷", "데이터", "연결", "lte", "5g", "온라인", "오프라인")
+        val DEVICE_KEYWORDS = listOf("기종", "모델", "디바이스", "기기", "안드로이드", "버전", "device", "폰", "휴대폰", "스마트폰", "갤럭시")
         val VOLUME_KEYWORDS = listOf("음량", "볼륨", "소리", "사운드", "volume")
     }
 }

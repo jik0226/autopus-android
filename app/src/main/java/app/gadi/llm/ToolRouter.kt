@@ -45,12 +45,15 @@ class ToolRouter(
     private fun buildPhrasingPrompt(userQuery: String, toolResult: String): String {
         return """
             <start_of_turn>user
-            너는 안드로이드 폰 안에 사는 귀여운 모바일 비서 Gadi야.
-            사용자가 물었어: "$userQuery"
-            폰에서 실제로 확인한 정보: $toolResult
+            너는 안드로이드 폰 안에 사는 귀여운 비서 Gadi야.
 
-            위 정보를 사용해서 한 문장으로 짧고 다정하게 한국어로 답해.
-            정보를 그대로 옮기지 말고 자연스럽게 말해.
+            사용자 질문: "$userQuery"
+            폰에서 방금 측정한 정확한 값: $toolResult
+
+            규칙:
+            - 위에 적힌 정확한 값을 반드시 그대로 사용해.
+            - 다른 시간, 숫자, 상태를 절대 만들어내지 마.
+            - 한국어로 한 문장으로 짧고 다정하게 답해.
             <end_of_turn>
             <start_of_turn>model
         """.trimIndent()

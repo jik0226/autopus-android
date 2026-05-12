@@ -277,24 +277,35 @@ v0.5+ — 카톡 자동 답장 등 Accessibility 영역 (사이드로드 전용 
 7. 캐릭터 상태머신 코드 (6 상태 전이)
 8. 클릭 시 말풍선 + 채팅 입력 UI
 
-**Week 3 — LLM 연결**
+**Week 3 — LLM 연결 (온디바이스 first, v5 반영)**
 
-9. Anthropic Claude API 통합 (cloud chat)
-10. `ModelRouter` 인터페이스 정의, `CloudClaudeRouter` 구현, `LocalRouter` 빈 껍데기
-11. 채팅 흐름 검증 (사용자 → 캐릭터 → API → 응답 → 말풍선)
+9. MediaPipe LLM Inference SDK 통합 (`com.google.mediapipe:tasks-genai`)
+10. **Gemma 3 1B** 모델 통합 (assets 번들 또는 first-run download + 캐시)
+11. `ModelRouter` 인터페이스 정의:
+    - `LocalRouter` 구현 (Gemma 3 1B + MediaPipe) — 기본
+    - `CloudRouter` 빈 껍데기 (옵션 B 사용자 토글 시 v0.4+에 구현)
+12. 채팅 UI ↔ LocalRouter 연결 (사용자 → 캐릭터 → 온디바이스 LLM → 응답 → 말풍선)
+13. 갤럭시 퀀텀 2에서 응답 속도 측정 (tokens/sec, 첫 토큰 latency)
+14. 한국어 의도 파악 1차 테스트
 
-**Week 4 — Tool Use (폰 상태 조회) + 데모 (신규)**
+**Week 4 — Tool Use (폰 상태 조회) + 한국어 검증 + 데모**
 
-12. Tool Use 5종 구현: `getCurrentTime`, `getBatteryStatus`, `getNetworkStatus`, `getDeviceInfo`, `getVolumeLevel`
-13. Claude API의 tool calling 통합 (Anthropic SDK의 `tools` 파라미터)
-14. "지금 몇 시야?", "배터리 얼마야?" → 캐릭터 답변 흐름 검증
-15. **v0.1 데모 영상 30~60초 촬영** ("폰 안에 사는 AI 비서" 컨셉)
+15. Tool Use 5종 구현: `getCurrentTime`, `getBatteryStatus`, `getNetworkStatus`, `getDeviceInfo`, `getVolumeLevel`
+16. 온디바이스 LLM function calling / structured output 패턴:
+    - Gemma 3 1B는 explicit tool calling API 약함 → **JSON 스키마 출력 + 파서** 패턴 권장
+    - 안 되면 한국어 특화 모델 (Polyglot-ko 1.3B) fallback 검토
+17. "지금 몇 시야?", "배터리 얼마야?" → 캐릭터 답변 흐름 검증
+18. **한국어 의도 파악 정확도 측정** (10~20 한국어 명령 케이스)
+19. **v0.1 데모 영상 30~60초 촬영** — 1B 한국어 성능에 따라:
+    - 충분히 자연스러우면: 그대로 v0.1 데모
+    - 부족하면: v0.4에서 Polyglot-ko 또는 fine-tuning 적용 후 데모
 
 이후 v0.2 진입 전에 한 번 점검 미팅 (Claude + Codex + 빌더).
 
 ## 10. 미해결 / 추후 결정
 
-- **1차 온디바이스 모델** — Gemma 3 1B / Llama 3.2 1B / Polyglot-ko 1.3B 비교. v0.1 Week 4 자연스럽게 검증.
+- **1차 온디바이스 모델** — Gemma 3 1B 선택 완료. 한국어 정확도는 v0.1 Week 4에 검증.
+- **MediaPipe LLM Inference → LiteRT-LM 마이그레이션** — Google AI Edge 공식 권장 (MediaPipe Android LLM Inference deprecated). v0.4 또는 v0.3 끝 시점 검토. Gemma 3 1B는 `.task` (MediaPipe) / `.litertlm` (LiteRT-LM) 둘 다 제공되므로 모델 자체는 그대로 사용 가능.
 - **Cloud fallback UX** — v0.3 끝에 검토 (사용자 토글 위치, 안내 문구)
 - ~~캐릭터 컨셉~~ ✅ 완료 (강아지 모티브 sprite 2종)
 - **v0.4 TTS** — 한국어 온디바이스 (Android TTS 시스템 / Sherpa-ONNX 등 검토)

@@ -1,7 +1,10 @@
 package app.gadi.ui
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,14 +19,20 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -32,6 +41,8 @@ import app.gadi.R
 import app.gadi.log.ActivityLog
 import app.gadi.log.ActivityLogEntry
 import app.gadi.log.ActivityLogKind
+import app.gadi.notification.NotificationRule
+import app.gadi.notification.NotificationRulesStore
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -39,17 +50,22 @@ import java.util.Locale
 /**
  * Main screen — live activity log timeline.
  *
- * Replaces the static placeholder home screen. Subscribes to
- * [ActivityLog.entries] and renders newest-first. Empty state nudges the
- * user to chat or wait for a notification so they see something appear.
+ * Subscribes to [ActivityLog.entries] and renders newest-first. Notification
+ * entries are long-pressable: opens a rule dialog that maps the source
+ * package to one of [NotificationRule] (default / always important /
+ * always normal / ignore). Rule changes take effect immediately on the
+ * next notification (no service restart needed).
  *
- * Visual goal: signal "Gadi is learning from what's happening." Every
- * entry corresponds to a real event (chat turn or notification posted/
- * classified), so the timeline doubles as a feedback loop for the user.
+ * Visual goal: signal "Gadi is learning from what's happening." Every row
+ * corresponds to a real event so the timeline doubles as a feedback loop.
  */
 @Composable
 fun LogScreen() {
+    val context = LocalContext.current
     val entries by ActivityLog.entries.collectAsState()
+    val rulesVersion by NotificationRulesStore.version.collectAsState()
+
+    var ruleDialogTarget by remember { mutableStateOf<String?>(null) }
 
     Column(
         modifier = Modifier
@@ -67,10 +83,37 @@ fun LogScreen() {
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 items(entries) { entry ->
-                    LogEntryRow(entry)
+                    val isNotification = entry.kind == ActivityLogKind.NOTIFICATION_POSTED ||
+                        entry.kind == ActivityLogKind.NOTIFICATION_CLASSIFIED
+                    val pkg = entry.packageName
+                    val onLongPress: (() -> Unit)? = if (isNotification && pkg != null) {
+                        { ruleDialogTarget = pkg }
+                    } else null
+                    // Recompose-on-version-bump: reading rulesVersion ensures
+                    // any rule edit triggers a re-render of the badges below.
+                    @Suppress("UNUSED_VARIABLE")
+                    val versionTrigger = rulesVersion
+                    val currentRule = pkg?.let { NotificationRulesStore.get(context, it) }
+                        ?: NotificationRule.DEFAULT
+                    LogEntryRow(entry, onLongPress, currentRule)
                 }
             }
         }
+    }
+
+    ruleDialogTarget?.let { pkg ->
+        @Suppress("UNUSED_VARIABLE")
+        val versionTrigger = rulesVersion
+        val currentRule = NotificationRulesStore.get(context, pkg)
+        RuleDialog(
+            packageName = pkg,
+            currentRule = currentRule,
+            onDismiss = { ruleDialogTarget = null },
+            onSelect = { rule ->
+                NotificationRulesStore.set(context, pkg, rule)
+                ruleDialogTarget = null
+            },
+        )
     }
 }
 
@@ -98,7 +141,7 @@ private fun LearningHeader() {
                 color = Color(0xFF172033),
             )
             Text(
-                text = "알림과 대화를 보고 패턴을 익혀요",
+                text = "알림을 길게 눌러 앱별 규칙을 설정해요",
                 fontSize = 12.sp,
                 color = Color(0xFF64748B),
             )
@@ -128,13 +171,26 @@ private fun EmptyState() {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun LogEntryRow(entry: ActivityLogEntry) {
+private fun LogEntryRow(
+    entry: ActivityLogEntry,
+    onLongPress: (() -> Unit)?,
+    currentRule: NotificationRule,
+) {
+    val baseModifier = Modifier
+        .fillMaxWidth()
+        .background(Color.White, RoundedCornerShape(10.dp))
+    val rowModifier = if (onLongPress != null) {
+        baseModifier.combinedClickable(
+            onClick = {},
+            onLongClick = onLongPress,
+        )
+    } else {
+        baseModifier
+    }
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color.White, RoundedCornerShape(10.dp))
-            .padding(horizontal = 14.dp, vertical = 10.dp),
+        modifier = rowModifier.padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.Top,
     ) {
         Text(
@@ -156,6 +212,10 @@ private fun LogEntryRow(entry: ActivityLogEntry) {
                     fontSize = 11.sp,
                     color = Color(0xFF94A3B8),
                 )
+                if (currentRule != NotificationRule.DEFAULT) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    RuleBadge(currentRule)
+                }
             }
             Spacer(modifier = Modifier.height(2.dp))
             Text(
@@ -171,6 +231,87 @@ private fun LogEntryRow(entry: ActivityLogEntry) {
                     color = Color(0xFF64748B),
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun RuleBadge(rule: NotificationRule) {
+    val (label, color) = when (rule) {
+        NotificationRule.ALWAYS_IMPORTANT -> "강제 중요" to Color(0xFFD97706)
+        NotificationRule.ALWAYS_NORMAL -> "강제 일반" to Color(0xFF64748B)
+        NotificationRule.IGNORE -> "무시" to Color(0xFFEF4444)
+        NotificationRule.DEFAULT -> return
+    }
+    Box(
+        modifier = Modifier
+            .background(color.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
+            .padding(horizontal = 6.dp, vertical = 2.dp),
+    ) {
+        Text(text = label, fontSize = 10.sp, color = color, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+@Composable
+private fun RuleDialog(
+    packageName: String,
+    currentRule: NotificationRule,
+    onDismiss: () -> Unit,
+    onSelect: (NotificationRule) -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Column {
+                Text(text = "앱 분류 규칙", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                Text(text = packageName, fontSize = 12.sp, color = Color(0xFF64748B))
+            }
+        },
+        text = {
+            Column {
+                RuleOption("기본 분류", "자동으로 중요/일반 판단", NotificationRule.DEFAULT, currentRule, onSelect)
+                Spacer(modifier = Modifier.height(6.dp))
+                RuleOption("항상 중요", "Gadi가 즉시 알림", NotificationRule.ALWAYS_IMPORTANT, currentRule, onSelect)
+                Spacer(modifier = Modifier.height(6.dp))
+                RuleOption("항상 일반", "기록만, 알림 X", NotificationRule.ALWAYS_NORMAL, currentRule, onSelect)
+                Spacer(modifier = Modifier.height(6.dp))
+                RuleOption("무시", "기록조차 안 함", NotificationRule.IGNORE, currentRule, onSelect)
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("닫기") }
+        },
+    )
+}
+
+@Composable
+private fun RuleOption(
+    label: String,
+    subtitle: String,
+    rule: NotificationRule,
+    currentRule: NotificationRule,
+    onSelect: (NotificationRule) -> Unit,
+) {
+    val selected = rule == currentRule
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(if (selected) Color(0xFFEAF5EF) else Color.Transparent, RoundedCornerShape(8.dp))
+            .clickable { onSelect(rule) }
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = label,
+                fontSize = 14.sp,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                color = Color(0xFF172033),
+            )
+            Text(text = subtitle, fontSize = 11.sp, color = Color(0xFF64748B))
+        }
+        if (selected) {
+            Text(text = "✓", color = Color(0xFF1F6F4A), fontSize = 18.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
